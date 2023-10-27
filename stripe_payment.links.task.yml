@@ -1,0 +1,5 @@
+stripe_payment.admin_settings:
+  route_name: stripe_payment.admin_settings
+  title: Settings
+  base_route: stripe_payment.admin_settings
+  weight: 0

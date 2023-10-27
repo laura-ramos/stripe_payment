@@ -1,7 +1,7 @@
 name: Stripe Payment
 type: module
 core_version_requirement: ^9 || ^10 
-description: Allows users to pay for service purchases with Stripe..
+description: Allows users to pay for service purchases with Stripe.
 package: stripe
 
 version: 1.0.0
