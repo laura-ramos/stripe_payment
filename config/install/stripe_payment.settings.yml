@@ -1,3 +1,8 @@
+content_types:
+  - article
 mode: true
 public_key: ''
 secret_key: ''
+cancel_url: ''
+field_price: ''
+field_role': ''
