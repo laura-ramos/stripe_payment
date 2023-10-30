@@ -2,3 +2,6 @@ administer stripe:
   title: Administer stripe Settings
   description: Access the stripe settings page.
   restrict access: true
+stripe payment button:
+  title: Stripe payment button
+  description: Display button form.
