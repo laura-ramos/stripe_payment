@@ -16,8 +16,8 @@ use Drupal\stripe_payment\Form\BtnPaySubscription;
  * Provides the Stripe pay subscription block.
  *
  * @Block(
- *   id = "btn_pay_subscription",
- *   admin_label = @Translation("Button pay of subscription")
+ *   id = "stripe_btn_pay_subscription",
+ *   admin_label = @Translation("Button pay of subscription Stripe")
  * )
  */
 class PaySubscriptionBlock extends BlockBase

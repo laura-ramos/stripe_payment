@@ -21,7 +21,7 @@ class BtnPaySubscription extends FormBase
    */
   public function getFormId()
   {
-    return 'button_pay_subscription';
+    return 'stripe_button_pay_subscription';
   }
 
   /**
@@ -58,6 +58,8 @@ class BtnPaySubscription extends FormBase
     $config = $this->config('stripe_payment.settings');
     $secretKey = $config->get('secret_key');
     $fieldPriceId = $config->get('field_price');
+    $fieldRole = $config->get('field_role');
+    $newRole = strlen($fieldRole) == 0 ? '' : $node->get($fieldRole)->getString();
 
     // Set your secret key. Remember to switch to your live secret key in production.
     // See your keys here: https://dashboard.stripe.com/apikeys
@@ -73,15 +75,19 @@ class BtnPaySubscription extends FormBase
     // Stripe redirects to this page when the customer clicks the back button in Checkout.
     $cancel = $baseUrl . $config->get('cancel_url');
 
+    $uid = \Drupal::currentUser()->id();
+    $user = \Drupal\user\Entity\User::load($uid);
+    $email = $user->get('mail')->value;
+    
     /**
      * A Checkout Session controls what your customer sees in the Stripe-hosted payment page
      * Specify URLs for success and cancel pages—make sure they’re publicly accessible so Stripe can redirect customers to them.
      * Use subscription mode to set up a subscription. Checkout also has payment and setup modes.
      * Pass in the predefined price ID retrieved above.
      */
-     
-    $session = $stripe->checkout->sessions->create([
-      'success_url' => $success.'?session_id={CHECKOUT_SESSION_ID}',
+
+    $params = [
+      'success_url' => $success.'?session_id={CHECKOUT_SESSION_ID}&roleid='.$newRole,
       'cancel_url' => $cancel,
       'mode' => 'subscription',
       'payment_method_types' => ['card'],
@@ -89,9 +95,24 @@ class BtnPaySubscription extends FormBase
         'price' => $priceId,
         // For metered billing, do not pass quantity
         'quantity' => 1,
+        'tax_rates' => ['txr_1O7M1iJT0uvSCYSGeJM27tqU'],
       ]],
-      //"customer" => 'cus_Ou5KA0FNCgf9dJ',
-    ]);
+    ];
+    if($email) {
+      // get customer if exist in stripe
+      $customer = $stripe->customers->search([
+        'query' => 'email:\''.$email .'\'',
+        'limit' => 1
+      ]);
+      
+      if($customer->data) {
+        $params['customer'] = $customer->data[0]['id'];
+      } else {
+        $params['customer_email'] = $email;
+      }
+    }
+
+    $session = $stripe->checkout->sessions->create($params);
 
     // Redirect to the URL returned on the Checkout Session.
     header("Location: " . $session->url);
