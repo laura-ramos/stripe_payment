@@ -7,9 +7,9 @@ stripe_payment.admin_settings:
   requirements:
     _permission: administer stripe
 stripe_payment.payment_success:
-  path: /stripe_payment/success
+  path: /stripe_payment/success_checkout
   defaults:
-    _controller: '\Drupal\stripe_payment\Controller\StripeCheckoutController::success'
+    _controller: '\Drupal\stripe_payment\Controller\StripeCheckoutController::successCheckout'
     _title: 'Paymet success'
   requirements:
     _access: 'TRUE'
