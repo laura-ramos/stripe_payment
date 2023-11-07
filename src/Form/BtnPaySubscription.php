@@ -60,9 +60,11 @@ class BtnPaySubscription extends FormBase
     $fieldPriceId = $config->get('field_price');
     $fieldRole = $config->get('field_role');
     $newRole = strlen($fieldRole) == 0 ? '' : $node->get($fieldRole)->getString();
+    $taxRate = $config->get('tax_rate');
 
     // Set your secret key. Remember to switch to your live secret key in production.
     // See your keys here: https://dashboard.stripe.com/apikeys
+    // Create stripe client.
     $stripe = new \Stripe\StripeClient($secretKey);
 
     // The price ID passed from the front end.
@@ -91,12 +93,13 @@ class BtnPaySubscription extends FormBase
       'cancel_url' => $cancel,
       'mode' => 'subscription',
       'payment_method_types' => ['card'],
-      'line_items' => [[
-        'price' => $priceId,
-        // For metered billing, do not pass quantity
-        'quantity' => 1,
-        'tax_rates' => ['txr_1O7M1iJT0uvSCYSGeJM27tqU'],
-      ]],
+      'line_items' => [
+        [
+          'price' => $priceId,
+          'quantity' => 1,
+          'tax_rates' => [$taxRate],
+        ]
+      ],
     ];
     if($email) {
       // get customer if exist in stripe
@@ -104,14 +107,16 @@ class BtnPaySubscription extends FormBase
         'query' => 'email:\''.$email .'\'',
         'limit' => 1
       ]);
-      
+      // validate if customer exist
       if($customer->data) {
+        // set customer id to params
         $params['customer'] = $customer->data[0]['id'];
       } else {
+        // set customer email to params
         $params['customer_email'] = $email;
       }
     }
-
+    // create checkout session
     $session = $stripe->checkout->sessions->create($params);
 
     // Redirect to the URL returned on the Checkout Session.

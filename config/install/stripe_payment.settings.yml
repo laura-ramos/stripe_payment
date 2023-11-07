@@ -4,5 +4,7 @@ mode: true
 public_key: ''
 secret_key: ''
 cancel_url: ''
+success_url: ''
 field_price: ''
-field_role': ''
+field_role: ''
+tax_rate: ''

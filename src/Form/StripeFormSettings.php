@@ -104,6 +104,15 @@ class StripeFormSettings extends ConfigFormBase
       '#open' => true,
     ];
 
+    $form['return_url']['success_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Success URL'),
+      '#default_value' => $config->get('success_url'),
+      '#description' => $this->t('What is the return URL when a new successful sale was made? Specify a relative URL.'),
+      '#size' => 40,
+      '#required' => true,
+    ];
+
     $form['return_url']['cancel_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Cancel URL'),
@@ -141,7 +150,23 @@ class StripeFormSettings extends ConfigFormBase
       '#description' => $this->t("What is the internal Drupal system name of the
         field to store new user role assigned after purchased a plan. Example: 'field_nvi_role'."),
       '#required' => true,
-      ];
+    ];
+
+    // Start payment details.
+    $form['details'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Payment configuration details'),
+      '#open' => false,
+    ];
+
+
+    $form['details']['tax_rate'] = [
+      '#title' => $this->t('Tax'),
+      '#type' => 'textfield',
+      '#default_value' => $config->get('tax_rate'),
+      '#description' => $this->t('ID of tax rate to charge in all transactions.'),
+      '#required' => true,
+    ];
 
     return parent::buildForm($form, $form_state);
   }
@@ -152,7 +177,7 @@ class StripeFormSettings extends ConfigFormBase
   public function submitForm(array &$form, FormStateInterface $form_state)
   {
     $configKeys = [
-      'content_types', 'mode', 'public_key', 'secret_key', 'cancel_url', 'field_price', 'field_role'
+      'content_types', 'mode', 'public_key', 'secret_key', 'success_url', 'cancel_url', 'field_price', 'field_role', 'tax_rate'
     ];
     $config = $this->config('stripe_payment.settings');
     foreach ($configKeys as $config_key) {
