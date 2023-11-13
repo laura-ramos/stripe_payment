@@ -20,3 +20,11 @@ stripe_payment.cancel_subscription:
     _title: 'Cancel'
   requirements:
     _user_is_logged_in: 'TRUE'
+# The route where notification incoming calls are received.
+stripe_payment.webhook_listener:
+  path: /stripe/webhook/listener
+  defaults:
+    _controller: \Drupal\stripe_payment\Controller\StripeWebhookController::listener
+    _title: Webhook notification listener
+  requirements:
+    _custom_access: '\Drupal\stripe_payment\Controller\StripeWebhookController::access'
