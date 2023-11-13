@@ -13,3 +13,10 @@ stripe_payment.payment_success:
     _title: 'Paymet success'
   requirements:
     _access: 'TRUE'
+stripe_payment.cancel_subscription:
+  path: '/user/{user}/subscription/cancel/{id}'
+  defaults:
+    _form: '\Drupal\stripe_payment\Form\StripeFormCancelSubscription'
+    _title: 'Cancel'
+  requirements:
+    _user_is_logged_in: 'TRUE'

@@ -7,7 +7,9 @@ The main purpouse of this module is process payment with Stripe, Stripe allows t
 This module requires module PPSS.
 
 ## Installation
-Install as you would normally install a contributed Drupal module. See Installing Modules for more details.
+- Install as you would normally install a contributed Drupal module. See Installing Modules for more details.
+- Install the Stripe PHP SKD by running composer require stripe/stripe-php
+- Register to Stripe if you haven't yet
 
 ## Configuration
 
