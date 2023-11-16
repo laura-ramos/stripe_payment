@@ -36,6 +36,12 @@ class StripeCheckoutController extends ControllerBase
     $email = $session->customer_details->email;
 
     if ($session->payment_status === 'paid') {
+      // obtener los datos de la suscripcion
+      $subscription = $stripe->subscriptions->retrieve(
+        $session->subscription,
+        []
+      );
+
       // The payment is successful. You can handle any additional actions here.
       // validate purchase register in ppss_sales
       $query = \Drupal::database()->select('ppss_sales', 's')->condition('id_subscription', $session->subscription);
@@ -150,6 +156,8 @@ class StripeCheckoutController extends ControllerBase
             'status',
             'mail',
             'platform',
+            'frequency',
+            'frequency_interval',
             'details',
             'created',
             'id_subscription',
@@ -163,6 +171,8 @@ class StripeCheckoutController extends ControllerBase
             1,
             $session->customer_details->email,
             'stripe',
+            $subscription->items->data[0]->price->recurring->interval,
+            $subscription->items->data[0]->price->recurring->interval_count,
             $session,
             $currentTime,
             $session->subscription,
