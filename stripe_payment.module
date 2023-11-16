@@ -15,3 +15,45 @@ function stripe_payment_mail($key, &$message, $params) {
      break;
  }
 }
+
+/**
+ * Implements hook_cron().
+ * Cancel subscriptions that expire on today's date
+ */
+function stripe_payment_cron() {
+  $today = strtotime(date('d-m-Y'));
+  // Get all subscriptions that expire today
+  $query = \Drupal::database()->select('ppss_sales', 's');
+  $query->condition('expire', $today);
+  $query->condition('status', 1, '=');
+  $query->fields('s', ['id', 'uid', 'id_role', 'mail']);
+  $query->orderBy('id', 'DESC');
+  $results = $query->execute()->fetchAll();
+  foreach($results as $subscription) {
+    // Update status subscription
+    \Drupal::database()->update('ppss_sales')->fields([
+      'status' => 0,
+    ])->condition('id', $subscription->id)->execute();
+    
+    try {
+      // Remove user role added by subscription purchased
+      $user = \Drupal\user\Entity\User::load($subscription->uid); 
+      $user->removeRole($subscription->id_role);
+      $user->save();
+
+      $title = '¡Cancelación de suscripción en Encuéntralo!';
+      $msg_user = 'Tu suscripción ha sido cancelada,';
+
+      $service = \Drupal::service('stripe_payment.api_service');
+      // Unpublish all ads setting a new date in the future
+      $service->unpublishNodes($subscription->uid, $subscription->id_role, strtotime(date('d-m-Y H:i:s')));
+      // Send email
+      $service->sendEmail($user->getEmail(), $title, $msg_user);
+      // Save message to log
+      \Drupal::logger('stripe_payment')->info('Se ha cancelado la suscripción de plan '.$subscription->id_role.
+        ' del usuario '.$subscription->uid);
+    } catch (\Exception $e) {
+      \Drupal::logger('stripe_payment')->error($e->getMessage());
+    }
+  }
+}
