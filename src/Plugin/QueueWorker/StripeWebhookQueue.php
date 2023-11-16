@@ -67,9 +67,15 @@ class StripeWebhookQueue extends QueueWorkerBase implements ContainerFactoryPlug
           //A billing subscription was cancelled
           $this->apiService->receiveWebhookCancel($entity_data->data->object->id);
           break;
+        case 'invoice.payment_succeeded':
+          //A payment completed
+          $this->apiService->paymentCompleted($entity_data);
+          break;
+        default:
+          Drupal::logger('stripe payment')->info('Received unknown event type ' . $entity_data->type);
       }
     } else {
-      \Drupal::logger('stripe')->error('Nada que procesar');
+      \Drupal::logger('stripe payment')->error('Nothing data to process');
     }
   }
 }

@@ -184,4 +184,51 @@ class StripeServiceApi
     }
 
   }
+
+  /**
+   * Save payment recurrent
+   * 
+   * @param array $entity_data
+   *   Data receive from webhook notification.
+   */
+  public function paymentCompleted($entity_data) {
+    //get data subscription
+    $query = \Drupal::database()->select('ppss_sales', 's');
+    $query->condition('id_subscription', $entity_data->data->object->subscription);
+    $query->fields('s', ['id','uid','frequency', 'status', 'details']);
+    $results = $query->execute()->fetchAll();
+    $subscription = $results[0];
+    
+    try {
+      // Get the number of payments
+      $payment = \Drupal::database()->select('ppss_sales_details', 's')
+                  ->condition('sid', $subscription->id)
+                  ->condition('event_id', 0)
+                  ->fields('s')
+                  ->execute()->fetchAll();
+      if(count($payment) == 1){
+        // if it is the first payment
+        // update event_id from webhook
+        \Drupal::database()->update('ppss_sales_details')->fields([
+          'event_id' => $entity_data->id,
+        ])->condition('id', $payment[0]->id, '=')->execute();
+      } else {
+        // Insert a new recurring payment
+        $query = \Drupal::database()->insert('ppss_sales_details');
+        $query->fields(['sid', 'tax', 'price', 'total', 'created', 'event_id']);
+        $query->values([
+          $subscription->id,
+          number_format($entity_data->data->object->tax / 100, 2),
+          number_format($entity_data->data->object->subtotal_excluding_tax / 100, 2),
+          number_format($entity_data->data->object->total / 100, 2),
+          $entity_data->created,
+          $entity_data->id
+        ]);
+        $query->execute();
+        \Drupal::logger('stripe payment')->info('Recurring payment has been made: '. $entity_data->data->object->subscription);
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('stripe payment')->error($e->getMessage());
+    }
+  }
 }
