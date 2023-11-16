@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Implement hook_mail().
+ */
+function stripe_payment_mail($key, &$message, $params) {
+ $options = array(
+   'langcode' => $message['langcode'],
+ );
+ switch ($key) {
+   case 'cancel_subscription':
+     $message['from'] = \Drupal::config('system.site')->get('mail');
+     $message['subject'] = t('@subject', ['@subject' => $params['subject']], $options);
+     $message['body'][] = $params['message'];
+     break;
+ }
+}

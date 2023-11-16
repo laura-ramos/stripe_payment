@@ -1,4 +1,4 @@
 services:
   stripe_payment.api_service:
     class: Drupal\stripe_payment\StripeServiceApi
-    arguments: ['@entity_type.manager', '@http_client']
+    arguments: ['@http_client']

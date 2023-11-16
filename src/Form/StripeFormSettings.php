@@ -159,12 +159,34 @@ class StripeFormSettings extends ConfigFormBase
       '#open' => false,
     ];
 
-
     $form['details']['tax_rate'] = [
       '#title' => $this->t('Tax'),
       '#type' => 'textfield',
       '#default_value' => $config->get('tax_rate'),
       '#description' => $this->t('ID of tax rate to charge in all transactions.'),
+      '#required' => true,
+    ];
+
+    // Webhooks details.
+    $form['webhooks'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Webhook configuration'),
+      '#open' => false,
+    ];
+
+    $form['webhooks']['url_webhook'] = [
+      '#type' => 'textfield',
+      '#disabled' => true,
+      '#title' => $this->t('URL'),
+      '#description' => $this->t('Endpoint URL.'),
+      '#default_value' => Url::fromRoute('stripe_payment.webhook_listener')->setAbsolute()->toString(),
+    ];
+
+    $form['webhooks']['secret_webhook'] = [
+      '#title' => $this->t('Secret Key'),
+      '#type' => 'textfield',
+      '#default_value' => $config->get('secret_webhook'),
+      '#description' => $this->t('Webhooks endpoint secret key.'),
       '#required' => true,
     ];
 
@@ -177,7 +199,7 @@ class StripeFormSettings extends ConfigFormBase
   public function submitForm(array &$form, FormStateInterface $form_state)
   {
     $configKeys = [
-      'content_types', 'mode', 'public_key', 'secret_key', 'success_url', 'cancel_url', 'field_price', 'field_role', 'tax_rate'
+      'content_types', 'mode', 'public_key', 'secret_key', 'success_url', 'cancel_url', 'field_price', 'field_role', 'tax_rate', 'secret_webhook'
     ];
     $config = $this->config('stripe_payment.settings');
     foreach ($configKeys as $config_key) {
