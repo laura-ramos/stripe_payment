@@ -11,6 +11,8 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Database;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Core\Url;
+use Drupal\Core\Link;
 
 class StripeCheckoutController extends ControllerBase
 {
@@ -224,6 +226,54 @@ class StripeCheckoutController extends ControllerBase
     /*return [
       '#markup' => $description,
     ];*/
+  }
+
+  /**
+   * Purchase history by user.
+   *
+   */
+  public function purchaseHistory() {
+    $user_id = \Drupal::currentUser()->hasPermission('access user profiles') ? \Drupal::routeMatch()->getParameter('user') : $this->currentUser()->id();
+    //create table header
+    $header_table = array(
+      'name' => $this->t('Plan'),
+      'total' => $this->t('Total price'),
+      'platform' => $this->t('Payment type'),
+      'date' => $this->t('Date'),
+      'status' => $this->t('Status'),
+      'details' => $this->t('Details')
+    );
+    //select records from table ppss_sales
+    $query = \Drupal::database()->select('ppss_sales', 's');
+    $query->condition('uid', $user_id);
+    $query->fields('s', ['id','uid','mail','platform','details', 'created', 'status', 'id_subscription']);
+    $results = $query->execute()->fetchAll();
+
+    $rows = array();
+    foreach ($results as $data) {
+      $details = json_decode(str_replace('Stripe\Checkout\Session JSON:', '', $data->details));
+      //$details = Url::fromRoute('iss.show_purchase', ['user' => $user_id, 'id' => $data->id], []);
+      $cancel = Url::fromRoute('stripe_payment.cancel_subscription', ['user' => $user_id, 'id' => $data->id], []);
+
+      //print the data from table
+      $rows[] = array(
+        'name' => $details->subscription,
+        'total' => number_format($details->amount_total / 100, 2),
+        'platform' => $data->platform,
+        'date' => date('d/m/Y', $data->created),
+        'status' => $data->status ? 'Activo' : 'Inactivo',
+        //'details' => Link::fromTextAndUrl($this->t('Details'), $details),
+        'cancel' => Link::fromTextAndUrl($this->t('Cancel'), $cancel),
+      );
+    }
+    //display data in site
+    $form['table'] = [
+      '#type' => 'table',
+      '#header' => $header_table,
+      '#rows' => $rows,
+      '#empty' => 'No hay compras',
+    ];
+    return $form;
   }
 
 }

@@ -63,8 +63,8 @@ class StripeServiceApi
         );
         return 'Cancellation subscription will be applied during the day.';
 
-      } catch (RequestException $e) {
-        return 'An error has occurred.';
+      } catch (\Stripe\Exception\InvalidRequestException $e) {
+        return 'An error has occurred: ' . $e->getError()->message;
       }
     } else {
       return 'Subscription is not active.';
