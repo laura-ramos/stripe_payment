@@ -59,7 +59,11 @@ class StripeServiceApi
         $stripe = new \Stripe\StripeClient($secretKey);
         $stripe->subscriptions->cancel(
           $result['id_subscription'],
-          []
+          [
+            "cancellation_details" => [
+              'feedback' => $reason
+            ]
+          ]
         );
         return 'Cancellation subscription will be applied during the day.';
 

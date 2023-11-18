@@ -38,14 +38,14 @@ class StripeFormCancelSubscription extends FormBase {
         '#title' => 'Razón de la cancelación',
         '#required' => TRUE,
         '#options' => [
-          1 => 'La navegación en el sitio web es difícil',
-          2 => 'El precio del plan es elevado',
-          4 => 'Me cambié a otra plataforma',
-          5 => 'Otro',
-        ],
-        '#ajax' => [
-          'callback' => '::otherField',
-          'wrapper' => 'container',
+          'too_expensive' => $this->t('It’s too expensive'),
+          'missing_features' => $this->t('Some features are missing'),
+          'switched_service' => $this->t('I’m switching to a different service'),
+          'unused' => $this->t('I don’t use the service enough'),
+          'customer_service' => $this->t('Customer service was less than expected'),
+          'too_complex' => $this->t('Ease of use was less than expected'),
+          'low_quality' => $this->t('Quality was less than expected'),
+          'other' => $this->t('Other reason'),
         ],
       ];
       $form['id'] = [
@@ -54,19 +54,7 @@ class StripeFormCancelSubscription extends FormBase {
         '#default_value' => $id,
         '#description' => 'ID sale'
       ];
-      $form['container'] = [
-        '#type' => 'container',
-        '#attributes' => [
-          'id' => 'container'
-        ],
-      ];
-      if ($form_state->getValue('reason', NULL) === "5") {
-        $form['container']['other'] = [
-          '#type' => 'textfield',
-          '#title' => 'Especificar razón',
-          '#required' => TRUE,
-        ];
-      }
+
       $form['actions']['submit'] = [
         '#type' => 'submit',
         '#value' => $this->t('Save'),
@@ -77,20 +65,12 @@ class StripeFormCancelSubscription extends FormBase {
     return $form;
   }
 
-  public function otherField($form, FormStateInterface $form_state) {
-    return $form['container'];
-  }
-
-
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $reason = $form['reason']['#options'][$form_state->getValue('reason')];
+    $reason = $form_state->getValue('reason');
     $id = $form_state->getValue('id');
-    if($form_state->getValue('reason') == '5') {
-      $reason = $form_state->getValue('other');
-    }
     //call the service for cancellation
     $cancel = \Drupal::service('stripe_payment.api_service')->cancelSubscription($id, $reason);
     $this->messenger()->addWarning($cancel);
