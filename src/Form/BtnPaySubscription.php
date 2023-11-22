@@ -61,6 +61,7 @@ class BtnPaySubscription extends FormBase
     $fieldRole = $config->get('field_role');
     $newRole = strlen($fieldRole) == 0 ? '' : $node->get($fieldRole)->getString();
     $taxRate = $config->get('tax_rate');
+    $plan = $node->getTitle();
 
     // Set your secret key. Remember to switch to your live secret key in production.
     // See your keys here: https://dashboard.stripe.com/apikeys
@@ -89,7 +90,7 @@ class BtnPaySubscription extends FormBase
      */
 
     $params = [
-      'success_url' => $success.'?session_id={CHECKOUT_SESSION_ID}&roleid='.$newRole,
+      'success_url' => $success.'?session_id={CHECKOUT_SESSION_ID}&roleid='.$newRole.'&plan='.$plan,
       'cancel_url' => $cancel,
       'mode' => 'subscription',
       'payment_method_types' => ['card'],

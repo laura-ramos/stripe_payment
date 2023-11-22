@@ -32,6 +32,7 @@ class StripeCheckoutController extends ControllerBase
     // Retrieve the Checkout Session ID from the URL parameter
     $sessionId = \Drupal::request()->query->get('session_id');
     $newRole = \Drupal::request()->query->get('roleid');
+    $plan = \Drupal::request()->query->get('plan');
     $isAnonymous = \Drupal::currentUser()->isAnonymous();
 
     $session = $stripe->checkout->sessions->retrieve($sessionId);
@@ -43,6 +44,7 @@ class StripeCheckoutController extends ControllerBase
         $session->subscription,
         []
       );
+      $session['plan'] = $plan;
 
       // The payment is successful. You can handle any additional actions here.
       // validate purchase register in ppss_sales
@@ -175,7 +177,7 @@ class StripeCheckoutController extends ControllerBase
             'stripe',
             $subscription->items->data[0]->price->recurring->interval,
             $subscription->items->data[0]->price->recurring->interval_count,
-            $session,
+            str_replace('Stripe\Checkout\Session JSON:', '', $session),
             $currentTime,
             $session->subscription,
             $newRole
@@ -251,13 +253,13 @@ class StripeCheckoutController extends ControllerBase
 
     $rows = array();
     foreach ($results as $data) {
-      $details = json_decode(str_replace('Stripe\Checkout\Session JSON:', '', $data->details));
+      $details = json_decode($data->details);
       //$details = Url::fromRoute('iss.show_purchase', ['user' => $user_id, 'id' => $data->id], []);
       $cancel = Url::fromRoute('stripe_payment.cancel_subscription', ['user' => $user_id, 'id' => $data->id], []);
-
+      
       //print the data from table
       $rows[] = array(
-        'name' => $details->subscription,
+        'name' => $details->plan,
         'total' => number_format($details->amount_total / 100, 2),
         'platform' => $data->platform,
         'date' => date('d/m/Y', $data->created),
