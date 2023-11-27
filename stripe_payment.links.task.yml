@@ -1,8 +1,8 @@
 stripe_payment.admin_settings:
   route_name: stripe_payment.admin_settings
-  title: Settings
-  base_route: stripe_payment.admin_settings
-  weight: 0
+  title: Stripe
+  base_route: ppss.admin_settings
+  weight: 20
 stripe_payment.purchase_history:
   route_name: stripe_payment.purchase_history
   base_route: entity.user.canonical

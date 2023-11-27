@@ -1,6 +1,6 @@
-stripe_payment.admin_settings:
-  title: Stripe Payment
-  description: Stripe Configurations
+ppss.admin_settings_stripe:
+  title: Stripe
   route_name: stripe_payment.admin_settings
-  parent: system.admin_config_services
-  weight: 10
+  description: Settings stripe.
+  parent: ppss.admin_settings_link
+  weight: 20
