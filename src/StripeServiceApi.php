@@ -55,7 +55,7 @@ class StripeServiceApi
         // Set your Stripe API secret key
         $config = \Drupal::config('stripe_payment.settings');
         // Get stripe secret.
-        $secretKey = $config->get('secret_key');
+        $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
         $stripe = new \Stripe\StripeClient($secretKey);
         $stripe->subscriptions->cancel(
           $result['id_subscription'],

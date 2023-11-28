@@ -93,7 +93,7 @@ class StripeWebhookController extends ControllerBase
   public function access()
   {
     $config = \Drupal::config('stripe_payment.settings');
-    $secretKey = $config->get('secret_key');
+    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
     \Stripe\Stripe::setApiKey($secretKey);
     // Replace this endpoint secret with your endpoint's unique secret
     // If you are using an endpoint defined with the API or dashboard, look in your webhook settings

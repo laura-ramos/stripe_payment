@@ -25,7 +25,7 @@ class StripeCheckoutController extends ControllerBase
     // Set your Stripe API secret key
     $config = $this->config('stripe_payment.settings');
     // Get stripe secret.
-    $secretKey = $config->get('secret_key');
+    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
     // Create stripe client.
     $stripe = new \Stripe\StripeClient($secretKey);
 
@@ -217,13 +217,13 @@ class StripeCheckoutController extends ControllerBase
 
       $description = "Thank you for your purchase!";
       \Drupal::messenger()->addMessage($description);
-      return new RedirectResponse($config->get('success_url'));
+      return new RedirectResponse($this->config('ppss.settings')->get('success_url'));
 
     } else {
       // The payment is not yet completed or failed. Handle accordingly.
       $description = "Payment not completed. Please contact support.";
       \Drupal::messenger()->addMessage($description);
-      return new RedirectResponse($config->get('cancel_url'));
+      return new RedirectResponse($this->config('ppss.settings')->get('cancel_url'));
     }
     /*return [
       '#markup' => $description,

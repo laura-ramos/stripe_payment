@@ -64,62 +64,44 @@ class StripeFormSettings extends ConfigFormBase
     $existingContentTypeOptions = $this->getExistingContentTypes();
     $config = $this->config('stripe_payment.settings');
 
-    $form['content_types'] = [
-      '#type' => 'checkboxes',
-      '#title' => $this->t('The content types to enable payment button'),
-      '#default_value' => $config->get('content_types'),
-      '#options' => $existingContentTypeOptions,
-      '#empty_option' => $this->t('- Select an existing content type -'),
-      '#description' => $this->t('On the specified node types, an button
-        will be available and can be shown to make purchases.'),
-      '#required' => true,
-    ];
-
-    $form['mode'] = [
+    $form['sandbox_mode'] = [
       '#title' => $this->t('Enable SandBox Mode'),
       '#type' => 'checkbox',
-      '#default_value' => $config->get('mode'),
+      '#default_value' => $config->get('sandbox_mode'),
       '#required' => true,
     ];
 
-    $form['public_key'] = [
+    $form['public_key_test'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Public key'),
-      '#default_value' => $config->get('public_key'),
+      '#title' => $this->t('Public key (test)'),
+      '#default_value' => $config->get('public_key_test'),
       '#description' => $this->t('Public key to authenticate client-side.'),
       '#required' => false,
     ];
 
-    $form['secret_key'] = [
+    $form['secret_key_test'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Secret key'),
-      '#default_value' => $config->get('secret_key'),
+      '#title' => $this->t('Secret key (test)'),
+      '#default_value' => $config->get('secret_key_test'),
       '#description' => $this->t('Secret key to authenticate API requests.'),
-      '#required' => true,
+      '#required' => false,
     ];
 
-    $form['return_url'] = [
-      '#type' => 'details',
-      '#title' => $this->t('URL of return pages'),
-      '#open' => true,
-    ];
-
-    $form['return_url']['success_url'] = [
+    $form['public_key_live'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Success URL'),
-      '#default_value' => $config->get('success_url'),
-      '#description' => $this->t('What is the return URL when a new successful sale was made? Specify a relative URL.'),
-      '#size' => 40,
-      '#required' => true,
+      '#title' => $this->t('Public key (live)'),
+      '#default_value' => $config->get('public_key_live'),
+      '#description' => $this->t('Public key to authenticate client-side.'),
+      '#required' => false,
     ];
 
-    $form['return_url']['cancel_url'] = [
+
+    $form['secret_key_live'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Cancel URL'),
-      '#default_value' => $config->get('cancel_url'),
-      '#description' => $this->t('Stripe redirects to this page when the customer clicks the back button in Checkout.'),
-      '#size' => 40,
-      '#required' => true,
+      '#title' => $this->t('Secret key (live)'),
+      '#default_value' => $config->get('secret_key_live'),
+      '#description' => $this->t('Secret key to authenticate API requests.'),
+      '#required' => false,
     ];
 
     // Start fields configuration.
@@ -199,7 +181,8 @@ class StripeFormSettings extends ConfigFormBase
   public function submitForm(array &$form, FormStateInterface $form_state)
   {
     $configKeys = [
-      'content_types', 'mode', 'public_key', 'secret_key', 'success_url', 'cancel_url', 'field_price', 'field_role', 'tax_rate', 'secret_webhook'
+      'sandbox_mode', 'public_key_test', 'secret_key_test', 'public_key_live', 'secret_key_live', 
+      'field_price', 'field_role', 'tax_rate', 'secret_webhook'
     ];
     $config = $this->config('stripe_payment.settings');
     foreach ($configKeys as $config_key) {

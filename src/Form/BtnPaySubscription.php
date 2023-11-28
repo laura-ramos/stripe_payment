@@ -32,8 +32,8 @@ class BtnPaySubscription extends FormBase
     // Atempt to get the fully loaded node object of the viewed page and settings.
     $node = \Drupal::routeMatch()->getParameter('node');
     $config = \Drupal::config('stripe_payment.settings');
-    $secretKey = $config->get('secret_key');
-
+    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
+    
     // Only shows form if credentials are correctly configured and content is a node.
     if (!(empty($secretKey) || (is_null($node)))) {
       $form['submit'] = [
@@ -56,7 +56,7 @@ class BtnPaySubscription extends FormBase
     // Atempt to get the fully loaded node object of the viewed page and settings.
     $node = \Drupal::routeMatch()->getParameter('node');
     $config = $this->config('stripe_payment.settings');
-    $secretKey = $config->get('secret_key');
+    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
     $fieldPriceId = $config->get('field_price');
     $fieldRole = $config->get('field_role');
     $newRole = strlen($fieldRole) == 0 ? '' : $node->get($fieldRole)->getString();
@@ -76,7 +76,7 @@ class BtnPaySubscription extends FormBase
     // Stripe redirects to this page after the customer successfully completes the checkout.
     $success = Url::fromRoute('stripe_payment.payment_success', [], ['absolute' => true])->toString();
     // Stripe redirects to this page when the customer clicks the back button in Checkout.
-    $cancel = $baseUrl . $config->get('cancel_url');
+    $cancel = $baseUrl . $this->config('ppss.settings')->get('error_url');
 
     $uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load($uid);

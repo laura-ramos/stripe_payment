@@ -1,6 +1,6 @@
 # General admin settings
 stripe_payment.admin_settings:
-  path: /admin/config/services/stripe_payment
+  path: /admin/config/services/ppss/stripe
   defaults: 
     _form: \Drupal\stripe_payment\Form\StripeFormSettings
     _title: Stripe Settings

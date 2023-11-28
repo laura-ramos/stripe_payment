@@ -46,7 +46,7 @@ class PaySubscriptionBlock extends BlockBase
     // Only shows button in allowed node types.
     if (!(is_null($node))) {
       $nodeType = $node->getType();
-      $allowedNodeTypes = \Drupal::config('stripe_payment.settings')->get('content_types');
+      $allowedNodeTypes = \Drupal::config('ppss.settings')->get('content_types');
       $findedNodeType = array_search($node->getType(), $allowedNodeTypes);
 
       if ($nodeType == $findedNodeType) {

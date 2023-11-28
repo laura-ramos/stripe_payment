@@ -1,10 +1,8 @@
-content_types:
-  - article
-mode: true
-public_key: ''
-secret_key: ''
-cancel_url: ''
-success_url: ''
+sandbox_mode: true
+public_key_test: ''
+secret_key_test: ''
+public_key_live: ''
+secret_key_live: ''
 field_price: ''
 field_role: ''
 tax_rate: ''
