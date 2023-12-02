@@ -44,7 +44,7 @@ class StripeCheckoutController extends ControllerBase
         $session->subscription,
         []
       );
-      $session['plan'] = $plan;
+      $session['description'] = $plan;
 
       // The payment is successful. You can handle any additional actions here.
       // validate purchase register in ppss_sales
@@ -78,7 +78,7 @@ class StripeCheckoutController extends ControllerBase
               \Drupal::logger('stripe payment')->error($errorInfo);
               \Drupal::logger('stripe payment')->error($e->getMessage());
             }
-            $fdescription = $this->t("Please login with your user account linked to this email: @email for begin use our services.", ['@email' => $email]);
+            $description = $this->t("Please login with your user account linked to this email: @email for begin use our services.", ['@email' => $email]);
           } else {
             // Creates a new user with the Stripe email.
             try {
@@ -221,8 +221,7 @@ class StripeCheckoutController extends ControllerBase
 
     } else {
       // The payment is not yet completed or failed. Handle accordingly.
-      $description = "Payment not completed. Please contact support.";
-      \Drupal::messenger()->addMessage($description);
+      \Drupal::messenger()->addMessage("Payment not completed. Please contact support.");
       return new RedirectResponse($this->config('ppss.settings')->get('cancel_url'));
     }
     /*return [
@@ -239,9 +238,8 @@ class StripeCheckoutController extends ControllerBase
     //create table header
     $header_table = array(
       'name' => $this->t('Plan'),
-      'total' => $this->t('Total price'),
       'platform' => $this->t('Payment type'),
-      'date' => $this->t('Date'),
+      'date' => $this->t('Start date'),
       'status' => $this->t('Status'),
       'details' => $this->t('Details')
     );
@@ -254,18 +252,17 @@ class StripeCheckoutController extends ControllerBase
     $rows = array();
     foreach ($results as $data) {
       $details = json_decode($data->details);
-      //$details = Url::fromRoute('iss.show_purchase', ['user' => $user_id, 'id' => $data->id], []);
+      $operations = Url::fromRoute('stripe_payment.manage_subscription', ['customer' => $details->customer], []);
       $cancel = Url::fromRoute('stripe_payment.cancel_subscription', ['user' => $user_id, 'id' => $data->id], []);
       
       //print the data from table
       $rows[] = array(
-        'name' => $details->plan,
-        'total' => number_format($details->amount_total / 100, 2),
+        'name' => $details->description,
         'platform' => $data->platform,
         'date' => date('d/m/Y', $data->created),
         'status' => $data->status ? 'Activo' : 'Inactivo',
-        //'details' => Link::fromTextAndUrl($this->t('Details'), $details),
-        'cancel' => Link::fromTextAndUrl($this->t('Cancel'), $cancel),
+        'details' => Link::fromTextAndUrl($this->t('Details'), $operations),
+        //'cancel' => Link::fromTextAndUrl($this->t('Cancel'), $cancel),
       );
     }
     //display data in site
@@ -276,6 +273,35 @@ class StripeCheckoutController extends ControllerBase
       '#empty' => 'No hay compras',
     ];
     return $form;
+  }
+
+  /**
+   *  Integrate the customer portal.
+   * 
+   *  @param $customer
+   *  Customer id
+   * 
+   */
+  public function manageSubscription($customer) {
+    // Set your Stripe API secret key
+    $config = $this->config('stripe_payment.settings');
+    // Get stripe secret.
+    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
+    
+    try {
+      $stripe = new \Stripe\StripeClient($secretKey);
+      $session = $stripe->billingPortal->sessions->create([
+        'customer' => $customer,
+        'return_url' => \Drupal::request()->getSchemeAndHttpHost() . $this->config('ppss.settings')->get('error_url'),
+      ]);
+      header("Location: " . $session->url);
+      exit();
+
+    } catch (\Exception $exception) {
+      return [
+        '#markup' => 'Something went wrong! ' . $exception->getMessage(),
+      ];
+    }
   }
 
 }

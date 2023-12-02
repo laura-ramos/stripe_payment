@@ -65,11 +65,15 @@ class StripeWebhookQueue extends QueueWorkerBase implements ContainerFactoryPlug
       switch($entity_data->type) {
         case 'customer.subscription.deleted':
           //A billing subscription was cancelled
-          $this->apiService->receiveWebhookCancel($entity_data->data->object->id);
+          $this->apiService->receiveWebhookCancel($entity_data);
           break;
         case 'invoice.payment_succeeded':
           //A payment completed
           $this->apiService->paymentCompleted($entity_data);
+          break;
+        case 'customer.subscription.updated':
+          //A customer subscription updated
+          //$this->apiService->subscriptionUpdated($entity_data);
           break;
         default:
           Drupal::logger('stripe payment')->info('Received unknown event type ' . $entity_data->type);

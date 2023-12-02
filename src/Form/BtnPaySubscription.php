@@ -33,13 +33,28 @@ class BtnPaySubscription extends FormBase
     $node = \Drupal::routeMatch()->getParameter('node');
     $config = \Drupal::config('stripe_payment.settings');
     $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
-    
+
     // Only shows form if credentials are correctly configured and content is a node.
     if (!(empty($secretKey) || (is_null($node)))) {
-      $form['submit'] = [
-        '#type' => 'submit',
-        '#value' => t('Buy Subscription Now'),
-      ];
+      $query = \Drupal::database()->select('ppss_sales', 's');
+      $query->condition('uid', 1);
+      $query->condition('status', 1);
+      $query->fields('s');
+      $subscription = $query->execute()->fetchAssoc();
+      // if subscription exists display plan update link
+      if($subscription) {
+        $details = json_decode($subscription['details']);
+        $form['link'] = [
+          '#title' => t('Actualizar plan'),
+          '#type' => 'link',
+          '#url' => Url::fromRoute('stripe_payment.manage_subscription', ["customer" => $details->customer]),
+        ];
+      } else {
+        $form['submit'] = [
+          '#type' => 'submit',
+          '#value' => t('Buy Subscription Now'),
+        ];
+      }
     } else {
       // Nothing to display.
       $message = "Stripe payment module don't has configured properly,

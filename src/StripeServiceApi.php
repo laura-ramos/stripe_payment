@@ -82,12 +82,12 @@ class StripeServiceApi
    *    Unique identifier for the object.
    * 
    */
-  public function receiveWebhookCancel($id)
+  public function receiveWebhookCancel($entity_data)
   {
     // Get all payments
     $query = \Drupal::database()->select('ppss_sales', 's');
     $query->join('ppss_sales_details', 'sd', 's.id = sd.sid');
-    $query->condition('id_subscription', $id);
+    $query->condition('id_subscription', $entity_data->data->object->subscription);
     $query->fields('s', ['id','uid','frequency', 'frequency_interval', 'status', 'id_role', 'mail']);
     $query->fields('sd',['id', 'created']);
     $query->orderBy('created', 'DESC');
@@ -97,43 +97,44 @@ class StripeServiceApi
       $user = \Drupal\user\Entity\User::load($subscription->uid); //get subscription user
       // Validate supscription end date
       // o last payment date add +1 frecuency(month/year)
-      $expire = strtotime(date('d-m-Y', $subscription->created). '+'.$subscription->frequency_interval . $subscription->frequency);
+      //$expire = strtotime(date('d-m-Y', $subscription->created). '+'.$subscription->frequency_interval . $subscription->frequency);
+      $expire = $entity_data->data->object->current_period_end;
       $today = date('d-m-Y');
-    }
-    // Validate expiration date with current expiration date
-    if (date('d-m-Y', $expire) == $today) {
-      try {
+    
+      // Validate expiration date with current expiration date
+      if (date('d-m-Y', $expire) == $today) {
+        try {
+          // Update ppss_sales table
+          \Drupal::database()->update('ppss_sales')->fields([
+            'status' => 0,
+            'expire' => $expire, ])->condition('id_subscription', $id, '=')->execute();
+          // Remove user role added by subscription purchased
+          $user->removeRole($subscription->id_role);
+          $user->save();
+
+          $title = '¡Cancelación de suscripción en Encuéntralo!';
+          $msg_user = 'Tu suscripción ha sido cancelada, mientras tanto recuerda que puedes continuar publicando anuncios con la versión gratuita';
+          \Drupal::logger('stripe_payment')->info('Se ha cancelado la suscripción de plan '.$subscription->id_role.
+          ' del usuario '.$subscription->uid);
+        } catch (\Exception $e) {
+          \Drupal::logger('stripe payment')->error($e->getMessage());
+        }
+      } else {
         // Update ppss_sales table
         \Drupal::database()->update('ppss_sales')->fields([
-          'status' => 0,
-          'expire' => $expire, ])->condition('id_subscription', $id, '=')->execute();
-        // Remove user role added by subscription purchased
-        $user->removeRole($subscription->id_role);
-        $user->save();
+          'expire' => $expire,])->condition('id_subscription', $id, '=')->execute();
 
-        $title = '¡Cancelación de suscripción en Encuéntralo!';
-        $msg_user = 'Tu suscripción ha sido cancelada, mientras tanto recuerda que puedes continuar publicando anuncios con la versión gratuita';
-        \Drupal::logger('stripe_payment')->info('Se ha cancelado la suscripción de plan '.$subscription->id_role.
-        ' del usuario '.$subscription->uid);
-      } catch (\Exception $e) {
-        \Drupal::logger('stripe payment')->error($e->getMessage());
+        $title = '¡Cancelación de pagos de suscripción en Encuéntralo!';
+        $msg_user = 'Tu suscripción ha sido programada para ser cancelada el día '.date('d/m/Y', $expire).
+        ' mientras tanto recuerda que puedes continuar publicando tus anuncios';
+        \Drupal::logger('stripe payment')->info('Se ha programado con fecha '.date('d/m/Y', $expire).' la cancelación de la suscripción de plan '
+        .$subscription->id_role.' del usuario '.$subscription->uid);
       }
-    } else {
-      // Update ppss_sales table
-      \Drupal::database()->update('ppss_sales')->fields([
-        'expire' => $expire,])->condition('id_subscription', $id, '=')->execute();
-
-      $title = '¡Cancelación de pagos de suscripción en Encuéntralo!';
-      $msg_user = 'Tu suscripción ha sido programada para cancelar el día '.date('d/m/Y', $expire).
-      ' mientras tanto recuerda que puedes continuar publicando tus anuncios';
-      \Drupal::logger('stripe payment')->info('Se ha programado con fecha '.date('d/m/Y', $expire).' la cancelación de la suscripción de plan '
-      .$subscription->id_role.' del usuario '.$subscription->uid);
+      // Unpublish all ads setting a new date in the future
+      $this->unpublishNodes($subscription->uid, $subscription->id_role, $expire);
+      // send email
+      $this->sendEmail($user->getEmail(), $title, $msg_user);
     }
-    // Unpublish all ads setting a new date in the future
-    $this->unpublishNodes($subscription->uid, $subscription->id_role, $expire);
-    // send email
-    $this->sendEmail($user->getEmail(), $title, $msg_user);
-
   }
 
   public function sendEmail($email, $title, $msg_user) {
