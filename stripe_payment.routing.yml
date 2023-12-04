@@ -36,10 +36,10 @@ stripe_payment.webhook_listener:
   requirements:
     _custom_access: '\Drupal\stripe_payment\Controller\StripeWebhookController::access'
 #######
-stripe_payment.purchase_history:
-  path: '/user/{user}/purchases'
+stripe_payment.purchase_stripe:
+  path: '/user/{user}/purchases_stripe'
   defaults:
-    _controller: '\Drupal\stripe_payment\Controller\StripeCheckoutController::purchaseHistory'
+    _controller: '\Drupal\stripe_payment\Controller\StripeCheckoutController::purchaseStripe'
     _title: 'Purchases'
   requirements:
     _user_is_logged_in: 'TRUE'

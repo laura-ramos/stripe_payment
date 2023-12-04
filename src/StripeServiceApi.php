@@ -8,6 +8,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\ClientInterface;
 use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Stripe\StripeClient;
 
 /**
  *
@@ -22,9 +24,17 @@ class StripeServiceApi
    */
   protected $httpClient;
 
-  public function __construct(ClientInterface $http_client)
+  /**
+   * Drupal\Core\Config\ConfigFactory definition.
+   *
+   * @var \Drupal\Core\Config\ConfigFactory
+   */
+  protected $configFactory;
+
+  public function __construct(ClientInterface $http_client, ConfigFactoryInterface $config_factory)
   {
     $this->httpClient = $http_client;
+    $this->config = $config_factory->get('stripe_payment.settings');
   }
 
   /**
@@ -52,11 +62,7 @@ class StripeServiceApi
       //reason for cancellation
       $data['reason'] = $reason;
       try {
-        // Set your Stripe API secret key
-        $config = \Drupal::config('stripe_payment.settings');
-        // Get stripe secret.
-        $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
-        $stripe = new \Stripe\StripeClient($secretKey);
+        $stripe = $this->getStripeClient();
         $stripe->subscriptions->cancel(
           $result['id_subscription'],
           [
@@ -234,6 +240,31 @@ class StripeServiceApi
       }
     } catch (\Exception $e) {
       \Drupal::logger('stripe payment')->error($e->getMessage());
+    }
+  }
+
+  /**
+   * Get a Stripe Client.
+   *
+   * @return \Stripe\StripeClient
+   *   The StripeClient.
+   */
+  public function getStripeClient() {
+    return new StripeClient($this->getApiKey());
+  }
+
+  /**
+   * Get secret key.
+   *
+   * @return string
+   *   Secret key.
+   */
+  public function getApiKey() {
+    // See your keys here: https://dashboard.stripe.com/apikeys
+    if ($this->config->get('sandbox_mode')) {
+      return $this->config->get('secret_key_test');
+    } else {
+      return $this->config->get('secret_key_live');
     }
   }
 }

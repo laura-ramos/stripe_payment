@@ -13,37 +13,68 @@ use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\stripe_payment\StripeServiceApi;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\Core\Config\ConfigFactoryInterface;
 
 class StripeCheckoutController extends ControllerBase
 {
+  
+  /**
+   * Drupal\stripe_payment\StripeServiceApi definition.
+   *
+   * @var \Drupal\stripe_payment\StripeServiceApi
+   */
+  protected $stripeServiceApi;
+
+  /**
+   * Used to get the current return URL, plus the query parameters.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request
+   */
+  protected $currentRequest;
+
+  /**
+   * UserSubscriptionsController constructor.
+   *
+   * @param \Drupal\stripe_payment\StripeServiceApi $stripeServiceApi
+   * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
+   */
+
+  public function __construct(StripeServiceApi $stripeServiceApi, RequestStack $requestStack) {
+    $this->stripeServiceApi = $stripeServiceApi;
+    $this->currentRequest = $requestStack->getCurrentRequest();
+  }
+
+    /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('stripe_payment.api_service'),
+      $container->get('request_stack')
+    );
+  }
 
   /**
    * Function to process payment.
    *
   */
   public function successCheckout() {
-    // Set your Stripe API secret key
-    $config = $this->config('stripe_payment.settings');
-    // Get stripe secret.
-    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
-    // Create stripe client.
-    $stripe = new \Stripe\StripeClient($secretKey);
-
-    // Retrieve the Checkout Session ID from the URL parameter
-    $sessionId = \Drupal::request()->query->get('session_id');
-    $newRole = \Drupal::request()->query->get('roleid');
-    $plan = \Drupal::request()->query->get('plan');
+    // Get stripe client.
+    $stripe = $this->stripeServiceApi->getStripeClient();
+    // Retrieve the Checkout Session ID, newRole, plan from the URL parameter
+    $sessionId = $this->currentRequest->query->get('session_id');
+    $newRole = $this->currentRequest->query->get('roleid');
+    $plan = $this->currentRequest->query->get('plan');
     $isAnonymous = \Drupal::currentUser()->isAnonymous();
-
+    // Retrieve a Session
     $session = $stripe->checkout->sessions->retrieve($sessionId);
     $email = $session->customer_details->email;
 
     if ($session->payment_status === 'paid') {
-      // obtener los datos de la suscripcion
-      $subscription = $stripe->subscriptions->retrieve(
-        $session->subscription,
-        []
-      );
       $session['description'] = $plan;
 
       // The payment is successful. You can handle any additional actions here.
@@ -51,6 +82,11 @@ class StripeCheckoutController extends ControllerBase
       $query = \Drupal::database()->select('ppss_sales', 's')->condition('id_subscription', $session->subscription);
       $numRows = $query->countQuery()->execute()->fetchField();
       if ($numRows == 0) {
+        // Retrieves the subscription with the given ID.
+        $subscription = $stripe->subscriptions->retrieve(
+          $session->subscription,
+          []
+        );
         // create or update user
         if ($isAnonymous) {
           // It's an anonymous user. First will search about if returned email by
@@ -233,7 +269,7 @@ class StripeCheckoutController extends ControllerBase
    * Purchase history by user.
    *
    */
-  public function purchaseHistory() {
+  public function purchaseStripe() {
     $user_id = \Drupal::currentUser()->hasPermission('access user profiles') ? \Drupal::routeMatch()->getParameter('user') : $this->currentUser()->id();
     //create table header
     $header_table = array(
@@ -283,16 +319,14 @@ class StripeCheckoutController extends ControllerBase
    * 
    */
   public function manageSubscription($customer) {
-    // Set your Stripe API secret key
-    $config = $this->config('stripe_payment.settings');
-    // Get stripe secret.
-    $secretKey = $config->get('sandbox_mode') == TRUE ? $config->get('secret_key_test') : $config->get('secret_key_live');
-    
     try {
-      $stripe = new \Stripe\StripeClient($secretKey);
+      // Get stripe client
+      $stripe = $this->stripeServiceApi->getStripeClient();
+      // Creates a session of the customer portal.
+      // https://stripe.com/docs/api/customer_portal/sessions/create
       $session = $stripe->billingPortal->sessions->create([
         'customer' => $customer,
-        'return_url' => \Drupal::request()->getSchemeAndHttpHost() . $this->config('ppss.settings')->get('error_url'),
+        'return_url' => $this->currentRequest->getSchemeAndHttpHost() . $this->config('ppss.settings')->get('error_url'),
       ]);
       header("Location: " . $session->url);
       exit();
