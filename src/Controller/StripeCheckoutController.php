@@ -210,7 +210,7 @@ class StripeCheckoutController extends ControllerBase
             $uid,
             1,
             $session->customer_details->email,
-            'stripe',
+            'Stripe',
             $subscription->items->data[0]->price->recurring->interval,
             $subscription->items->data[0]->price->recurring->interval_count,
             str_replace('Stripe\Checkout\Session JSON:', '', $session),
