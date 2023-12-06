@@ -68,15 +68,13 @@ class StripeCheckoutController extends ControllerBase
     // Retrieve the Checkout Session ID, newRole, plan from the URL parameter
     $sessionId = $this->currentRequest->query->get('session_id');
     $newRole = $this->currentRequest->query->get('roleid');
-    $plan = $this->currentRequest->query->get('plan');
+    //$plan = $this->currentRequest->query->get('plan');
     $isAnonymous = \Drupal::currentUser()->isAnonymous();
     // Retrieve a Session
     $session = $stripe->checkout->sessions->retrieve($sessionId);
     $email = $session->customer_details->email;
 
     if ($session->payment_status === 'paid') {
-      $session['description'] = $plan;
-
       // The payment is successful. You can handle any additional actions here.
       // validate purchase register in ppss_sales
       $query = \Drupal::database()->select('ppss_sales', 's')->condition('id_subscription', $session->subscription);
@@ -87,6 +85,8 @@ class StripeCheckoutController extends ControllerBase
           $session->subscription,
           []
         );
+        $session['description'] = $subscription->plan->nickname;
+
         // create or update user
         if ($isAnonymous) {
           // It's an anonymous user. First will search about if returned email by
@@ -211,8 +211,8 @@ class StripeCheckoutController extends ControllerBase
             1,
             $session->customer_details->email,
             'Stripe',
-            $subscription->items->data[0]->price->recurring->interval,
-            $subscription->items->data[0]->price->recurring->interval_count,
+            $subscription->plan->interval,
+            $subscription->plan->interval_count,
             str_replace('Stripe\Checkout\Session JSON:', '', $session),
             $currentTime,
             $session->subscription,

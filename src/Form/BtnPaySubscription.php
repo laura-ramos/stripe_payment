@@ -74,7 +74,7 @@ class BtnPaySubscription extends FormBase
     $fieldRole = $config->get('field_role');
     $newRole = strlen($fieldRole) == 0 ? '' : $node->get($fieldRole)->getString();
     $taxRate = $config->get('tax_rate');
-    $plan = $node->getTitle();
+    //$plan = $node->getTitle();
     // The price ID passed from the front end.
     $priceId = $node->get($fieldPriceId)->getString();
     
@@ -100,7 +100,7 @@ class BtnPaySubscription extends FormBase
      */
 
     $params = [
-      'success_url' => $success.'?session_id={CHECKOUT_SESSION_ID}&roleid='.$newRole.'&plan='.$plan,
+      'success_url' => $success.'?session_id={CHECKOUT_SESSION_ID}&roleid='.$newRole,
       'cancel_url' => $cancel,
       'mode' => 'subscription',
       'payment_method_types' => ['card'],
